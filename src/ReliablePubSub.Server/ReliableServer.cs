@@ -16,6 +16,7 @@ namespace ReliablePubSub.Server
         private XPublisherSocket _publisherSocket;
         private NetMQTimer _heartbeatTimer;
         private NetMQPoller _poller;
+        private PairSocket _shim;
 
         public ReliableServer(TimeSpan heartbeatInterval, string address)
         {
@@ -33,6 +34,7 @@ namespace ReliablePubSub.Server
 
         private void Run(PairSocket shim)
         {
+            _shim = shim;
             using (_publisherSocket = new XPublisherSocket())
             {
                 _publisherSocket.SetWelcomeMessage(WelcomeMessage);

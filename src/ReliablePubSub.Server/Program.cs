@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Remoting.Channels;
 using System.Threading;
 using System.Threading.Tasks;
 using ReliablePubSub.Common;
@@ -43,27 +44,33 @@ namespace ReliablePubSub.Server
             using (var tokenSource = new CancellationTokenSource())
             using (var publisher = new Publisher("tcp://*", 6669, 6668, topics.Keys))
             {
-                Task.Run(() =>
+                var tasks = new List<Task>();
+
+                for (int i = 0; i < 1000; i++)
                 {
-
-                    long id = 0;
-                    var rnd = new Random(1);
-                    while (!tokenSource.IsCancellationRequested)
+                    var t = Task.Run(() =>
                     {
-                        var message = new MyMessage()
-                        {
-                            Id = id++,
-                            Key = rnd.Next(1, 1000).ToString(),
-                            Body = $"Body: {Guid.NewGuid().ToString()}",
-                            TimeStamp = DateTime.UtcNow
-                        };
-                        publisher.Publish(knownTypes, "topic1", message);
-                        Thread.Sleep(100);
-                    }
-                }, tokenSource.Token);
 
+                        long id = 0;
+                        var rnd = new Random(1);
+                        while (!tokenSource.IsCancellationRequested)
+                        {
+                            var message = new MyMessage
+                            {
+                                Id = id++,
+                                Key = rnd.Next(1, 1000).ToString(),
+                                Body = $"T:{Thread.CurrentThread.ManagedThreadId} Body: {Guid.NewGuid().ToString()}",
+                                TimeStamp = DateTime.UtcNow
+                            };
+                            publisher.Publish(knownTypes, "topic1", message);
+                            Thread.Sleep(100);
+                        }
+                    }, tokenSource.Token);
+                    tasks.Add(t);
+                }
                 while (Console.ReadKey().Key != ConsoleKey.Escape) { }
                 tokenSource.Cancel();
+                Task.WaitAll(tasks.ToArray(), 5000);
             }
         }
     }
