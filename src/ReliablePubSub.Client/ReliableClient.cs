@@ -109,27 +109,28 @@ namespace ReliablePubSub.Client
 
         private void OnSubscriberMessage(object sender, NetMQSocketEventArgs e)
         {
-            // we just forward the message to the actor
-            var message = _subscriber.ReceiveMultipartMessage();
-
-            Debug.WriteLine(message);
-
-            var topic = message[0].ConvertToString();
-
-            if (topic == WelcomeMessage)
+            NetMQMessage message = null;
+            while (_subscriber.TryReceiveMultipartMessage(ref message))
             {
-                SubscriberAddress = e.Socket.Options.LastEndpoint;
-                Debug.WriteLine($"Subsciber Address: {SubscriberAddress}");
-                _welcomeMessageHandler?.Invoke();
-            }
-            else if (topic == HeartbeatMessage)
-            {
-                // we got a heartbeat, lets postponed the timer
-                _timeoutTimer.EnableAndReset();
-            }
-            else
-            {
-                _shim.SendMultipartMessage(message);
+               // Debug.WriteLine(message);
+
+                var topic = message[0].ConvertToString();
+
+                if (topic == WelcomeMessage)
+                {
+                    SubscriberAddress = e.Socket.Options.LastEndpoint;
+                    Debug.WriteLine($"Subsciber Address: {SubscriberAddress}");
+                    _welcomeMessageHandler?.Invoke();
+                }
+                else if (topic == HeartbeatMessage)
+                {
+                    // we got a heartbeat, lets postponed the timer
+                    _timeoutTimer.EnableAndReset();
+                }
+                else
+                {
+                    _shim.SendMultipartMessage(message);
+                }
             }
         }
 
@@ -140,7 +141,7 @@ namespace ReliablePubSub.Client
             NetMQMessage message = null;
             while (e.Actor.TryReceiveMultipartMessage(ref message))
             {
-                Debug.WriteLine(message);
+               // Debug.WriteLine(message);
                 try
                 {
                     _subscriberMessageHandler?.Invoke(message);
@@ -179,7 +180,6 @@ namespace ReliablePubSub.Client
             {
                 var socket = new SubscriberSocket();
                 sockets.Add(socket);
-
                 socket.ReceiveReady += handleMessage;
                 poller.Add(socket);
 

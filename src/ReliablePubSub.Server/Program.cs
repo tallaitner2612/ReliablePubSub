@@ -40,13 +40,13 @@ namespace ReliablePubSub.Server
 
             var topics = new Dictionary<string, Type>();
             topics.Add("topic1", typeof(MyMessage));
-
+            int counter = 0;
             using (var tokenSource = new CancellationTokenSource())
             using (var publisher = new Publisher("tcp://*", 6669, 6668, topics.Keys))
             {
                 var tasks = new List<Task>();
 
-                for (int i = 0; i < 1000; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     var t = Task.Run(() =>
                     {
@@ -63,7 +63,8 @@ namespace ReliablePubSub.Server
                                 TimeStamp = DateTime.UtcNow
                             };
                             publisher.Publish(knownTypes, "topic1", message);
-                            Thread.Sleep(100);
+                            Console.Title = $"Sent: {Interlocked.Increment(ref counter)}";
+                            Thread.Sleep(DateTime.UtcNow.Second % 30 == 0 ? 100 : 100);
                         }
                     }, tokenSource.Token);
                     tasks.Add(t);

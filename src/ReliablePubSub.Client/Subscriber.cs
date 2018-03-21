@@ -37,19 +37,21 @@ namespace ReliablePubSub.Client
 
         private void HandleUpdate(NetMQMessage m)
         {
-            var topic = m.First.ConvertToString();
-            var message = m.Last.Buffer;
-            var type = _knownTypes[_topics[topic]];
-            var obj = type.Serializer.Deserialize(message);
-            var key = type.KeyExtractor.Extract(obj);
-
-            _lastValueCache.AddOrUpdate(topic, key, obj);
-
-            Debug.WriteLine($"From subscriber:{obj}");
+            var topic = m.Pop().ConvertToString();
+            int frame = m.FrameCount;
+            while (frame-- > 0)
+            {
+                var message = m.Pop().Buffer;
+                var type = _knownTypes[_topics[topic]];
+                var obj = type.Serializer.Deserialize(message);
+                var key = type.KeyExtractor.Extract(obj);
+                _lastValueCache.AddOrUpdate(topic, key, obj);
+            }
         }
 
         private void GetSnapshots()
         {
+            return;
             var snapshotAddress =
                 _client.SubscriberAddress.Replace(_publisherPort.ToString(), _snapshotPort.ToString());
 
@@ -72,7 +74,7 @@ namespace ReliablePubSub.Client
                             if (!_lastValueCache.TryGet(topic, key, out cachedValue) || type.Comparer.Compare(cachedValue, obj) < 0)
                             {
                                 _lastValueCache.AddOrUpdate(topic, key, obj);
-                                Debug.WriteLine($"From snapshot:{obj}");
+                                //Debug.WriteLine($"From snapshot:{obj}");
                             }
                             else
                                 Debug.WriteLine($"Object from snapshot dropped. Cached: {cachedValue} Snapshot: {obj}");

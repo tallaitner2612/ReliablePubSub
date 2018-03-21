@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using ReliablePubSub.Common;
 
 namespace ReliablePubSub.Client
@@ -18,10 +19,11 @@ namespace ReliablePubSub.Client
 
             var topics = new Dictionary<string, Type>();
             topics.Add("topic1", typeof(MyMessage));
-
+            int counter = 0;
             var cache = new DefaultLastValueCache<object>(topics.Keys, (topic, key, value) =>
             {
-                Console.WriteLine($"Client Cache Updated. Topic:{topic} Key:{key} Value:{value} ClientTime:{DateTime.Now:hh:mm:ss.fff}");
+                Console.Title = $"Received: {Interlocked.Increment(ref counter)}";
+                //Console.WriteLine($"Client Cache Updated. Topic:{topic} Key:{key} Value:{value} ClientTime:{DateTime.Now:hh:mm:ss.fff}");
             });
 
             using (new Subscriber(new[] { "tcp://localhost" }, 6669, 6668, knownTypes, topics, cache))
