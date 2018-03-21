@@ -31,12 +31,12 @@ namespace ReliablePubSub.Server
             _snapshotCache = new SnapshotCache(topics);
             _snapshotServer = new SnapshotServer($"{baseAddress}:{snapshotPort}", _snapshotCache);
             _publishServer = new ReliableServer(TimeSpan.FromSeconds(5), $"{baseAddress}:{publisherPort}", _publishInterval, OnReceiveTimeout);
-            _consumerTask = Task.Factory.StartNew(ConsumeMessages, _cancellationTokenSource,
-                TaskCreationOptions.LongRunning);
+            _consumerTask = Task.Factory.StartNew(ConsumeMessages, _cancellationTokenSource.Token,
+                TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
 
-        private void ConsumeMessages(object state)
+        private void ConsumeMessages()
         {
             var messageBulk = new List<byte[]>(_maxBulkSize);
             var lastPublish = DateTime.MinValue;

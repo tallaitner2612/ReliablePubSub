@@ -64,7 +64,7 @@ namespace ReliablePubSub.Server
                             };
                             publisher.Publish(knownTypes, "topic1", message);
                             Console.Title = $"Sent: {Interlocked.Increment(ref counter)}";
-                            Thread.Sleep(DateTime.UtcNow.Second % 30 == 0 ? 100 : 100);
+                            Thread.Sleep(DateTime.UtcNow.Second % 30 == 0 ? 1000 : 100);
                         }
                     }, tokenSource.Token);
                     tasks.Add(t);
