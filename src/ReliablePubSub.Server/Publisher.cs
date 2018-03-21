@@ -23,11 +23,13 @@ namespace ReliablePubSub.Server
         private readonly int _publishInterval;
         private readonly int _maxBulkSize;
         private const string OnReceiveTimeoutTopic = "RT";
+        private Dictionary<string, long> _messageIds;
 
         public Publisher(string baseAddress, ushort publisherPort, ushort snapshotPort, IEnumerable<string> topics, int publishInterval = 20, int maxBulkSize = 100)
         {
             _publishInterval = publishInterval;
             _maxBulkSize = maxBulkSize;
+            _messageIds = topics.ToDictionary(x => x, x => 0L);
             _snapshotCache = new SnapshotCache(topics);
             _snapshotServer = new SnapshotServer($"{baseAddress}:{snapshotPort}", _snapshotCache);
             _publishServer = new ReliableServer(TimeSpan.FromSeconds(5), $"{baseAddress}:{publisherPort}", _publishInterval, OnReceiveTimeout);
@@ -69,7 +71,12 @@ namespace ReliablePubSub.Server
 
         private NetMQMessage CreateMultipartMessage(string publishTopic, List<byte[]> messageBulk)
         {
+            var msgid = _messageIds[publishTopic]++;
+            if (msgid < 0)
+                _messageIds[publishTopic] = msgid = 0;
+
             var message = new NetMQMessage(messageBulk);
+            message.Push(msgid);
             message.Push(publishTopic);
             return message;
         }
