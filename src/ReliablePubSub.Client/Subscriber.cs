@@ -51,7 +51,6 @@ namespace ReliablePubSub.Client
 
         private void GetSnapshots()
         {
-            return;
             var snapshotAddress =
                 _client.SubscriberAddress.Replace(_publisherPort.ToString(), _snapshotPort.ToString());
 
