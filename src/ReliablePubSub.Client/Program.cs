@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using ReliablePubSub.Common;
 
@@ -26,7 +27,9 @@ namespace ReliablePubSub.Client
                 //Console.WriteLine($"Client Cache Updated. Topic:{topic} Key:{key} Value:{value} ClientTime:{DateTime.Now:hh:mm:ss.fff}");
             });
 
-            using (new Subscriber(new[] { "tcp://localhost" }, 6669, 6668, knownTypes, topics, cache))
+
+            using (new Subscriber(new[] { "tcp://localhost" }, 6669, 6668, knownTypes, topics, cache,
+                (t, c, n) => Debug.WriteLine($"Gap in message id. Current:{c} New:{n}")))
             {
                 while (Console.ReadKey().Key != ConsoleKey.Escape) { }
             }
