@@ -24,7 +24,7 @@ namespace ReliablePubSub.Client
             _knownTypes = knownTypes;
             _topics = topics;
             _lastValueCache = lastValueCache;
-            _messageSequenceGapAction = messageSequenceGapAction;
+            _messageSequenceGapAction =  messageSequenceGapAction;
             _publisherPort = publisherPort;
             _snapshotPort = snapshotPort;
 
@@ -45,8 +45,16 @@ namespace ReliablePubSub.Client
 
             long msgid = m.Pop().ConvertToInt64();
             var currentMsgid = _messageIds[topic];
-            if (msgid - currentMsgid > 1 && msgid != 0 && currentMsgid != 0)
-                _messageSequenceGapAction?.Invoke(topic, currentMsgid, msgid);
+            if (msgid - currentMsgid > 1 && msgid != 0 && currentMsgid != 0) {
+                try
+                {
+                    _messageSequenceGapAction?.Invoke(topic, currentMsgid, msgid);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
             _messageIds[topic] = msgid;
 
             int frame = m.FrameCount;
@@ -62,7 +70,6 @@ namespace ReliablePubSub.Client
 
         private void GetSnapshots()
         {
-            return;
             var snapshotAddress =
                 _client.SubscriberAddress.Replace(_publisherPort.ToString(), _snapshotPort.ToString());
 
